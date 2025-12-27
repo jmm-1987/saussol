@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Factura - Taller de Automoción{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Nueva Factura</h2>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="cliente_id">Cliente *</label>
+            <select id="cliente_id" name="cliente_id" required>
+                <option value="">Seleccione un cliente</option>
+                {% for cliente in clientes %}
+                <option value="{{ cliente.id }}">{{ cliente.nombre }} {% if cliente.dni %}({{ cliente.dni }}){% endif %}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Intervenciones a Facturar *</label>
+            {% if intervenciones %}
+            <div style="max-height: 350px; overflow-y: auto; border: 1px solid #ddd; padding: 8px; border-radius: 4px;">
+                {% for intervencion in intervenciones %}
+                <div style="padding: 8px; border-bottom: 1px solid #eee;">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" name="intervenciones" value="{{ intervencion.id }}" style="margin-right: 10px; width: auto;">
+                        <div style="flex: 1;">
+                            <strong>{{ intervencion.coche.matricula }}</strong> - {{ intervencion.fecha.strftime('%d/%m/%Y') }}<br>
+                            <small style="font-size: 12px;">{{ intervencion.descripcion[:100] }}{% if intervencion.descripcion|length > 100 %}...{% endif %}</small><br>
+                            <strong style="color: #27ae60;">{{ "%.2f"|format(intervencion.precio) }} €</strong>
+                        </div>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No hay intervenciones disponibles para facturar.</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="actions">
+            <button type="submit" class="btn btn-success" {% if not intervenciones %}disabled{% endif %}>Crear Factura</button>
+            <a href="{{ url_for('listar_facturas') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

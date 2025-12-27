@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Ficha de Coche - Taller de Automoción{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Ficha del Coche: {{ coche.matricula }}</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+        <div>
+            <strong>Marca:</strong> {{ coche.marca or '-' }}
+        </div>
+        <div>
+            <strong>Modelo:</strong> {{ coche.modelo or '-' }}
+        </div>
+        <div>
+            <strong>Año:</strong> {{ coche.año or '-' }}
+        </div>
+        <div>
+            <strong>Color:</strong> {{ coche.color or '-' }}
+        </div>
+    </div>
+    
+    <div class="actions">
+        <a href="{{ url_for('nueva_intervencion', coche_id=coche.id) }}" class="btn btn-success">Nueva Intervención</a>
+        <a href="{{ url_for('listar_coches') }}" class="btn btn-secondary">Volver</a>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Intervenciones</h2>
+    
+    {% if intervenciones %}
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Km</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+                <th>Horas</th>
+                <th>Facturada</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for intervencion in intervenciones %}
+            <tr>
+                <td>{{ intervencion.fecha.strftime('%d/%m/%Y') }}</td>
+                <td>{{ intervencion.km or '-' }}</td>
+                <td>{{ intervencion.descripcion }}</td>
+                <td>{{ "%.2f"|format(intervencion.precio) }} €</td>
+                <td>{{ "%.1f"|format(intervencion.horas_trabajo) }}</td>
+                <td>
+                    {% if intervencion.factura_id %}
+                        <span style="color: green;">✓ Sí</span>
+                    {% else %}
+                        <span style="color: orange;">No</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if not intervencion.factura_id %}
+                    <a href="{{ url_for('editar_intervencion', id=intervencion.id) }}" class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">Editar</a>
+                    <form method="POST" action="{{ url_for('eliminar_intervencion', id=intervencion.id) }}" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar esta intervención?');">
+                        <button type="submit" class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">Eliminar</button>
+                    </form>
+                    {% else %}
+                    <span style="color: #7f8c8d; font-size: 12px;">Facturada</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No hay intervenciones registradas para este coche.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

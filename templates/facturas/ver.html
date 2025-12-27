@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Factura {{ factura.numero_factura }} - Taller de Automoción{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Factura: {{ factura.numero_factura }}</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px;">
+        <div>
+            <strong>Cliente:</strong><br>
+            {{ factura.cliente.nombre }}<br>
+            {% if factura.cliente.dni %}{{ factura.cliente.dni }}<br>{% endif %}
+            {% if factura.cliente.direccion %}{{ factura.cliente.direccion }}{% endif %}
+        </div>
+        <div>
+            <strong>Fecha:</strong> {{ factura.fecha.strftime('%d/%m/%Y') }}<br>
+            <strong>Estado Verifactu:</strong> 
+            {% if factura.enviada_verifactu %}
+                <span style="color: green;">✓ Enviada</span>
+                {% if factura.fecha_envio_verifactu %}
+                    <br><small>{{ factura.fecha_envio_verifactu.strftime('%d/%m/%Y %H:%M') }}</small>
+                {% endif %}
+            {% else %}
+                <span style="color: orange;">Pendiente</span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <h3>Intervenciones</h3>
+    {% if factura.intervenciones %}
+    <table>
+        <thead>
+            <tr>
+                <th>Coche</th>
+                <th>Fecha</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for intervencion in factura.intervenciones %}
+            <tr>
+                <td>{{ intervencion.coche.matricula }}</td>
+                <td>{{ intervencion.fecha.strftime('%d/%m/%Y') }}</td>
+                <td>{{ intervencion.descripcion }}</td>
+                <td>{{ "%.2f"|format(intervencion.precio) }} €</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr style="background-color: #34495e; color: white; font-weight: bold;">
+                <td colspan="3" style="text-align: right;">TOTAL:</td>
+                <td>{{ "%.2f"|format(factura.total) }} €</td>
+            </tr>
+        </tfoot>
+    </table>
+    {% endif %}
+    
+    <div class="actions" style="margin-top: 20px;">
+        {% if not factura.enviada_verifactu %}
+        <form method="POST" action="{{ url_for('enviar_verifactu', id=factura.id) }}" style="display: inline;" onsubmit="return confirm('¿Enviar esta factura a Verifactu?');">
+            <button type="submit" class="btn btn-success">Enviar a Verifactu</button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('listar_facturas') }}" class="btn btn-secondary">Volver</a>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Clientes - Taller de Automoción{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Lista de Clientes</h2>
+    <div class="actions">
+        <a href="{{ url_for('nuevo_cliente') }}" class="btn btn-success">Nuevo Cliente</a>
+    </div>
+    
+    {% if clientes %}
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>DNI</th>
+                <th>Teléfono</th>
+                <th>Email</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cliente in clientes %}
+            <tr>
+                <td>{{ cliente.nombre }}</td>
+                <td>{{ cliente.dni or '-' }}</td>
+                <td>{{ cliente.telefono or '-' }}</td>
+                <td>{{ cliente.email or '-' }}</td>
+                <td>
+                    <a href="{{ url_for('editar_cliente', id=cliente.id) }}" class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">Editar</a>
+                    <form method="POST" action="{{ url_for('eliminar_cliente', id=cliente.id) }}" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar este cliente?');">
+                        <button type="submit" class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No hay clientes registrados. <a href="{{ url_for('nuevo_cliente') }}">Crear el primero</a></p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

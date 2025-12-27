@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Coche - Taller de Automoción{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Editar Coche</h2>
+    
+    <form method="POST">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="matricula">Matrícula *</label>
+                <input type="text" id="matricula" name="matricula" value="{{ coche.matricula }}" required style="text-transform: uppercase;">
+            </div>
+            <div class="form-group">
+                <label for="año">Año</label>
+                <input type="number" id="año" name="año" value="{{ coche.año or '' }}" min="1900" max="2100">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="marca">Marca</label>
+                <input type="text" id="marca" name="marca" value="{{ coche.marca or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="modelo">Modelo</label>
+                <input type="text" id="modelo" name="modelo" value="{{ coche.modelo or '' }}">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="color">Color</label>
+            <input type="text" id="color" name="color" value="{{ coche.color or '' }}">
+        </div>
+        
+        <div class="actions">
+            <button type="submit" class="btn btn-success">Actualizar Coche</button>
+            <a href="{{ url_for('listar_coches') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

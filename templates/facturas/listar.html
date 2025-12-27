@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Facturas - Taller de Automoción{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Lista de Facturas</h2>
+    <div class="actions">
+        <a href="{{ url_for('nueva_factura') }}" class="btn btn-success">Nueva Factura</a>
+    </div>
+    
+    {% if facturas %}
+    <table>
+        <thead>
+            <tr>
+                <th>Número</th>
+                <th>Cliente</th>
+                <th>Fecha</th>
+                <th>Total</th>
+                <th>Verifactu</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for factura in facturas %}
+            <tr>
+                <td><strong>{{ factura.numero_factura }}</strong></td>
+                <td>{{ factura.cliente.nombre }}</td>
+                <td>{{ factura.fecha.strftime('%d/%m/%Y') }}</td>
+                <td>{{ "%.2f"|format(factura.total) }} €</td>
+                <td>
+                    {% if factura.enviada_verifactu %}
+                        <span style="color: green;">✓ Enviada</span>
+                    {% else %}
+                        <span style="color: orange;">Pendiente</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('ver_factura', id=factura.id) }}" class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">Ver</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No hay facturas creadas. <a href="{{ url_for('nueva_factura') }}">Crear la primera</a></p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

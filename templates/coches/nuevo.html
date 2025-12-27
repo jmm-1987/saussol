@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Coche - Taller de Automoción{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Nuevo Coche</h2>
+    
+    <form method="POST">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="matricula">Matrícula *</label>
+                <input type="text" id="matricula" name="matricula" required style="text-transform: uppercase;">
+            </div>
+            <div class="form-group">
+                <label for="año">Año</label>
+                <input type="number" id="año" name="año" min="1900" max="2100">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="marca">Marca</label>
+                <input type="text" id="marca" name="marca">
+            </div>
+            <div class="form-group">
+                <label for="modelo">Modelo</label>
+                <input type="text" id="modelo" name="modelo">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="color">Color</label>
+            <input type="text" id="color" name="color">
+        </div>
+        
+        <div class="actions">
+            <button type="submit" class="btn btn-success">Guardar Coche</button>
+            <a href="{{ url_for('listar_coches') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

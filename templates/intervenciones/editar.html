@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Intervención - Taller de Automoción{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Editar Intervención</h2>
+    
+    <form method="POST">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="fecha">Fecha *</label>
+                <input type="date" id="fecha" name="fecha" value="{{ intervencion.fecha.strftime('%Y-%m-%d') }}" required>
+            </div>
+            <div class="form-group">
+                <label for="km">Kilómetros</label>
+                <input type="number" id="km" name="km" min="0" value="{{ intervencion.km or '' }}" placeholder="Ej: 50000">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="horas_trabajo">Horas de Trabajo</label>
+            <input type="number" id="horas_trabajo" name="horas_trabajo" step="0.1" min="0" value="{{ intervencion.horas_trabajo }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="descripcion">Descripción *</label>
+            <textarea id="descripcion" name="descripcion" required>{{ intervencion.descripcion }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="precio">Precio (€) *</label>
+            <input type="number" id="precio" name="precio" step="0.01" min="0" value="{{ intervencion.precio }}" required>
+        </div>
+        
+        <div class="actions">
+            <button type="submit" class="btn btn-success">Actualizar Intervención</button>
+            <a href="{{ url_for('ficha_coche', id=intervencion.coche_id) }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
