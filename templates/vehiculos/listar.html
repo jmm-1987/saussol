@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Coches - Taller de Automoción{% endblock %}
+{% block title %}Vehículos - Taller{% endblock %}
 
 {% block content %}
 <div class="card">
-    <h2>Lista de Coches</h2>
+    <h2>Lista de Vehículos</h2>
     <div class="actions">
-        <a href="{{ url_for('nuevo_coche') }}" class="btn btn-success">Nuevo Coche</a>
+        <a href="{{ url_for('nuevo_coche') }}" class="btn btn-success">Nuevo Vehículo</a>
     </div>
     
     {% if coches %}
@@ -16,8 +16,10 @@
                 <th>Matrícula</th>
                 <th>Marca</th>
                 <th>Modelo</th>
+                <th>Tipo</th>
                 <th>Año</th>
                 <th>Color</th>
+                <th>Cliente</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -27,12 +29,14 @@
                 <td><strong>{{ coche.matricula }}</strong></td>
                 <td>{{ coche.marca or '-' }}</td>
                 <td>{{ coche.modelo or '-' }}</td>
+                <td>{{ coche.tipo or '-' }}</td>
                 <td>{{ coche.año or '-' }}</td>
                 <td>{{ coche.color or '-' }}</td>
+                <td>{{ coche.cliente.nombre if coche.cliente else '-' }}</td>
                 <td>
                     <a href="{{ url_for('ficha_coche', id=coche.id) }}" class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">Ficha</a>
                     <a href="{{ url_for('editar_coche', id=coche.id) }}" class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">Editar</a>
-                    <form method="POST" action="{{ url_for('eliminar_coche', id=coche.id) }}" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar este coche?');">
+                    <form method="POST" action="{{ url_for('eliminar_coche', id=coche.id) }}" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar este vehículo?');">
                         <button type="submit" class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">Eliminar</button>
                     </form>
                 </td>
@@ -42,9 +46,10 @@
     </table>
     {% else %}
     <div class="empty-state">
-        <p>No hay coches registrados. <a href="{{ url_for('nuevo_coche') }}">Registrar el primero</a></p>
+        <p>No hay vehículos registrados. <a href="{{ url_for('nuevo_coche') }}">Registrar el primero</a></p>
     </div>
     {% endif %}
 </div>
 {% endblock %}
+
 

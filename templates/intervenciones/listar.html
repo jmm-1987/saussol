@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Intervenciones - Taller{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Lista de Intervenciones</h2>
+    
+    {% if intervenciones %}
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Vehículo</th>
+                <th>Cliente</th>
+                <th>Km</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+                <th>Horas</th>
+                <th>Facturada</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for intervencion in intervenciones %}
+            <tr>
+                <td>{{ intervencion.fecha.strftime('%d/%m/%Y') }}</td>
+                <td><strong>{{ intervencion.coche.matricula }}</strong></td>
+                <td>{{ intervencion.cliente.nombre if intervencion.cliente else '-' }}</td>
+                <td>{{ intervencion.km or '-' }}</td>
+                <td>{{ intervencion.descripcion[:50] }}{% if intervencion.descripcion|length > 50 %}...{% endif %}</td>
+                <td><strong style="color: #16a34a;">{{ "%.2f"|format(intervencion.precio) }} €</strong></td>
+                <td>{{ "%.1f"|format(intervencion.horas_trabajo) }}</td>
+                <td>
+                    {% if intervencion.factura_id %}
+                        <span style="color: green;">✓ Sí</span>
+                    {% else %}
+                        <span style="color: orange;">No</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('editar_intervencion', id=intervencion.id) }}" class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">Editar</a>
+                    {% if not intervencion.factura_id %}
+                    <form method="POST" action="{{ url_for('eliminar_intervencion', id=intervencion.id) }}" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar esta intervención?');">
+                        <button type="submit" class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">Eliminar</button>
+                    </form>
+                    {% else %}
+                    <a href="{{ url_for('ver_factura', id=intervencion.factura_id) }}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;">Ver Factura</a>
+                    {% endif %}
+                    <a href="{{ url_for('ficha_coche', id=intervencion.coche_id) }}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;">Ficha Vehículo</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No hay intervenciones registradas.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

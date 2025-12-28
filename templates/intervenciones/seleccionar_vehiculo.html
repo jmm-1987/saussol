@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Seleccionar Vehículo - Nueva Intervención{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Seleccionar Vehículo para Nueva Intervención</h2>
+    
+    {% if vehiculos %}
+    <table>
+        <thead>
+            <tr>
+                <th>Matrícula</th>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Cliente</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vehiculo in vehiculos %}
+            <tr>
+                <td><strong>{{ vehiculo.matricula }}</strong></td>
+                <td>{{ vehiculo.marca or '-' }}</td>
+                <td>{{ vehiculo.modelo or '-' }}</td>
+                <td>{{ vehiculo.cliente.nombre if vehiculo.cliente else '-' }}</td>
+                <td>
+                    <a href="{{ url_for('nueva_intervencion', coche_id=vehiculo.id) }}" class="btn btn-success" style="padding: 5px 10px; font-size: 12px;">Crear Intervención</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No hay vehículos registrados. <a href="{{ url_for('nuevo_coche') }}">Registrar el primero</a></p>
+    </div>
+    {% endif %}
+    
+    <div class="actions" style="margin-top: 20px;">
+        <a href="{{ url_for('listar_intervenciones') }}" class="btn btn-secondary">Cancelar</a>
+    </div>
+</div>
+{% endblock %}
+

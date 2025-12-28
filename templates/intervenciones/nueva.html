@@ -1,12 +1,29 @@
 {% extends "base.html" %}
 
-{% block title %}Nueva Intervención - Taller de Automoción{% endblock %}
+{% block title %}Nueva Intervención - Taller{% endblock %}
 
 {% block content %}
 <div class="card">
-    <h2>Nueva Intervención - {{ coche.matricula }}</h2>
+    <h2>Nueva Intervención{% if coche %} - Vehículo {{ coche.matricula }}{% endif %}</h2>
     
     <form method="POST" id="intervencionForm">
+        {% if not coche %}
+        <div class="form-group">
+            <label for="coche_id">Vehículo *</label>
+            <div style="display: flex; gap: 10px; align-items: flex-end;">
+                <select id="coche_id" name="coche_id" required style="flex: 1;">
+                    <option value="">Seleccione un vehículo</option>
+                    {% for vehiculo in vehiculos %}
+                    <option value="{{ vehiculo.id }}">{{ vehiculo.matricula }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="btn btn-primary" onclick="abrirModalVehiculo()" style="white-space: nowrap;">+ Nuevo Vehículo</button>
+            </div>
+        </div>
+        {% else %}
+        <input type="hidden" name="coche_id" value="{{ coche.id }}">
+        {% endif %}
+        
         <div class="form-row">
             <div class="form-group">
                 <label for="fecha">Fecha *</label>
@@ -16,6 +33,16 @@
                 <label for="km">Kilómetros</label>
                 <input type="number" id="km" name="km" min="0" placeholder="Ej: 50000">
             </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="cliente_id">Cliente (Opcional)</label>
+            <select id="cliente_id" name="cliente_id">
+                <option value="">Sin asignar</option>
+                {% for cliente in clientes %}
+                <option value="{{ cliente.id }}">{{ cliente.nombre }} {% if cliente.dni %}({{ cliente.dni }}){% endif %}</option>
+                {% endfor %}
+            </select>
         </div>
         
         <div class="form-group">
@@ -44,9 +71,73 @@
         
         <div class="actions">
             <button type="submit" class="btn btn-success">Guardar Intervenciones</button>
+            {% if coche %}
             <a href="{{ url_for('ficha_coche', id=coche.id) }}" class="btn btn-secondary">Cancelar</a>
+            {% else %}
+            <a href="{{ url_for('listar_intervenciones') }}" class="btn btn-secondary">Cancelar</a>
+            {% endif %}
         </div>
     </form>
+</div>
+
+<!-- Modal de Nuevo Vehículo -->
+<div id="modalVehiculo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto; align-items: flex-start; padding: 20px;">
+    <div style="max-width: 600px; width: 100%; margin: 50px auto; background: white; border-radius: 12px; padding: 30px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); position: relative;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h2 style="margin: 0;">Nuevo Vehículo</h2>
+            <button type="button" onclick="cerrarModalVehiculo()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">&times;</button>
+        </div>
+        
+        <form id="formVehiculoModal" onsubmit="guardarVehiculo(event)">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modal_matricula">Matrícula *</label>
+                    <input type="text" id="modal_matricula" required style="text-transform: uppercase;">
+                </div>
+                <div class="form-group">
+                    <label for="modal_año">Año</label>
+                    <input type="number" id="modal_año" min="1900" max="2100">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modal_marca">Marca</label>
+                    <input type="text" id="modal_marca">
+                </div>
+                <div class="form-group">
+                    <label for="modal_modelo">Modelo</label>
+                    <input type="text" id="modal_modelo">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modal_tipo">Tipo</label>
+                    <input type="text" id="modal_tipo" placeholder="Ej: Turismo, Motocicleta, Furgoneta...">
+                </div>
+                <div class="form-group">
+                    <label for="modal_color">Color</label>
+                    <input type="text" id="modal_color">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="modal_cliente_id_vehiculo">Cliente (Opcional)</label>
+                <select id="modal_cliente_id_vehiculo">
+                    <option value="">Sin asignar</option>
+                    {% for cliente in clientes %}
+                    <option value="{{ cliente.id }}">{{ cliente.nombre }} {% if cliente.dni %}({{ cliente.dni }}){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="actions">
+                <button type="submit" class="btn btn-success">Guardar Vehículo</button>
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalVehiculo()">Cancelar</button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}
 
@@ -54,6 +145,77 @@
 <script>
     // Establecer fecha de hoy por defecto
     document.getElementById('fecha').valueAsDate = new Date();
+    
+    function abrirModalVehiculo() {
+        document.getElementById('modalVehiculo').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function cerrarModalVehiculo() {
+        document.getElementById('modalVehiculo').style.display = 'none';
+        document.body.style.overflow = 'auto';
+        document.getElementById('formVehiculoModal').reset();
+    }
+    
+    // Cerrar modal al hacer clic fuera de él
+    document.getElementById('modalVehiculo').addEventListener('click', function(e) {
+        if (e.target === this) {
+            cerrarModalVehiculo();
+        }
+    });
+    
+    function guardarVehiculo(event) {
+        event.preventDefault();
+        
+        const matricula = document.getElementById('modal_matricula').value.toUpperCase();
+        const año = document.getElementById('modal_año').value;
+        const marca = document.getElementById('modal_marca').value;
+        const modelo = document.getElementById('modal_modelo').value;
+        const tipo = document.getElementById('modal_tipo').value;
+        const color = document.getElementById('modal_color').value;
+        const cliente_id = document.getElementById('modal_cliente_id_vehiculo').value;
+        
+        if (!matricula.trim()) {
+            alert('La matrícula es obligatoria');
+            return;
+        }
+        
+        // Crear FormData
+        const formData = new FormData();
+        formData.append('matricula', matricula);
+        if (año) formData.append('año', año);
+        if (marca) formData.append('marca', marca);
+        if (modelo) formData.append('modelo', modelo);
+        if (tipo) formData.append('tipo', tipo);
+        if (color) formData.append('color', color);
+        if (cliente_id) formData.append('cliente_id', cliente_id);
+        
+        // Enviar petición AJAX
+        fetch('{{ url_for("nuevo_coche_ajax") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Añadir el nuevo vehículo al select
+                const select = document.getElementById('coche_id');
+                const option = document.createElement('option');
+                option.value = data.vehiculo_id;
+                option.textContent = data.matricula;
+                option.selected = true;
+                select.appendChild(option);
+                
+                cerrarModalVehiculo();
+            } else {
+                alert('Error al crear vehículo: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al crear vehículo');
+        });
+    }
     
     function añadirLinea() {
         const container = document.getElementById('lineas-container');
@@ -90,4 +252,3 @@
     }
 </script>
 {% endblock %}
-

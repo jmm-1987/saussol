@@ -1,10 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Editar Intervención - Taller de Automoción{% endblock %}
+{% block title %}Editar Intervención - Taller{% endblock %}
 
 {% block content %}
 <div class="card">
     <h2>Editar Intervención</h2>
+    
+    {% if intervencion.factura_id %}
+    <div class="flash-message" style="background: #fff3cd; border-left-color: #ffc107; color: #856404; margin-bottom: 20px;">
+        <strong>⚠️ Advertencia:</strong> Esta intervención está facturada. Los cambios pueden afectar a la factura asociada.
+    </div>
+    {% endif %}
     
     <form method="POST">
         <div class="form-row">
@@ -19,8 +25,13 @@
         </div>
         
         <div class="form-group">
-            <label for="horas_trabajo">Horas de Trabajo</label>
-            <input type="number" id="horas_trabajo" name="horas_trabajo" step="0.1" min="0" value="{{ intervencion.horas_trabajo }}">
+            <label for="cliente_id">Cliente (Opcional)</label>
+            <select id="cliente_id" name="cliente_id">
+                <option value="">Sin asignar</option>
+                {% for cliente in clientes %}
+                <option value="{{ cliente.id }}" {% if intervencion.cliente_id == cliente.id %}selected{% endif %}>{{ cliente.nombre }} {% if cliente.dni %}({{ cliente.dni }}){% endif %}</option>
+                {% endfor %}
+            </select>
         </div>
         
         <div class="form-group">
@@ -28,14 +39,20 @@
             <textarea id="descripcion" name="descripcion" required>{{ intervencion.descripcion }}</textarea>
         </div>
         
-        <div class="form-group">
-            <label for="precio">Precio (€) *</label>
-            <input type="number" id="precio" name="precio" step="0.01" min="0" value="{{ intervencion.precio }}" required>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="precio">Precio (€) *</label>
+                <input type="number" id="precio" name="precio" step="0.01" min="0" value="{{ intervencion.precio }}" required>
+            </div>
+            <div class="form-group">
+                <label for="horas_trabajo">Horas de Trabajo</label>
+                <input type="number" id="horas_trabajo" name="horas_trabajo" step="0.1" min="0" value="{{ intervencion.horas_trabajo }}">
+            </div>
         </div>
         
         <div class="actions">
             <button type="submit" class="btn btn-success">Actualizar Intervención</button>
-            <a href="{{ url_for('ficha_coche', id=intervencion.coche_id) }}" class="btn btn-secondary">Cancelar</a>
+            <a href="{{ url_for('listar_intervenciones') }}" class="btn btn-secondary">Cancelar</a>
         </div>
     </form>
 </div>

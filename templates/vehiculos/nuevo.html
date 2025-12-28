@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Vehículo - Taller{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Nuevo Vehículo</h2>
+    
+    <form method="POST" id="vehiculoForm">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="matricula">Matrícula *</label>
+                <input type="text" id="matricula" name="matricula" required style="text-transform: uppercase;">
+            </div>
+            <div class="form-group">
+                <label for="año">Año</label>
+                <input type="number" id="año" name="año" min="1900" max="2100">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="marca">Marca</label>
+                <input type="text" id="marca" name="marca">
+            </div>
+            <div class="form-group">
+                <label for="modelo">Modelo</label>
+                <input type="text" id="modelo" name="modelo">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="tipo">Tipo</label>
+                <input type="text" id="tipo" name="tipo" placeholder="Ej: Turismo, Motocicleta, Furgoneta...">
+            </div>
+            <div class="form-group">
+                <label for="color">Color</label>
+                <input type="text" id="color" name="color">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+                <label for="cliente_id">Cliente (Opcional)</label>
+                <div style="display: flex; gap: 10px; align-items: flex-end;">
+                    <select id="cliente_id" name="cliente_id" style="flex: 1;">
+                        <option value="">Sin asignar</option>
+                        {% for cliente in clientes %}
+                        <option value="{{ cliente.id }}">{{ cliente.nombre }} {% if cliente.dni %}({{ cliente.dni }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="btn btn-primary" onclick="abrirModalCliente()" style="white-space: nowrap;">+ Nuevo Cliente</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button type="submit" class="btn btn-success">Guardar Vehículo</button>
+            <a href="{{ url_for('listar_coches') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<!-- Modal de Nuevo Cliente -->
+<div id="modalCliente" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto; align-items: flex-start; padding: 20px;">
+    <div style="max-width: 600px; width: 100%; margin: 50px auto; background: white; border-radius: 12px; padding: 30px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); position: relative;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h2 style="margin: 0;">Nuevo Cliente</h2>
+            <button type="button" onclick="cerrarModalCliente()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">&times;</button>
+        </div>
+        
+        <form id="formClienteModal" onsubmit="guardarCliente(event)">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modal_nombre">Nombre *</label>
+                    <input type="text" id="modal_nombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="modal_dni">DNI</label>
+                    <input type="text" id="modal_dni">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modal_telefono">Teléfono</label>
+                    <input type="text" id="modal_telefono">
+                </div>
+                <div class="form-group">
+                    <label for="modal_email">Email</label>
+                    <input type="email" id="modal_email">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="modal_direccion">Dirección</label>
+                <input type="text" id="modal_direccion">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modal_codigo_postal">Código Postal</label>
+                    <input type="text" id="modal_codigo_postal">
+                </div>
+                <div class="form-group">
+                    <label for="modal_poblacion">Población</label>
+                    <input type="text" id="modal_poblacion">
+                </div>
+                <div class="form-group">
+                    <label for="modal_provincia">Provincia</label>
+                    <input type="text" id="modal_provincia">
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button type="submit" class="btn btn-success">Guardar Cliente</button>
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalCliente()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function abrirModalCliente() {
+        document.getElementById('modalCliente').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        // Reinicializar campos de búsqueda en el modal si es necesario
+        setTimeout(() => {
+            if (window.initSearchableSelects) {
+                window.initSearchableSelects();
+            }
+        }, 100);
+    }
+    
+    function cerrarModalCliente() {
+        document.getElementById('modalCliente').style.display = 'none';
+        document.body.style.overflow = 'auto';
+        document.getElementById('formClienteModal').reset();
+    }
+    
+    // Cerrar modal al hacer clic fuera de él
+    document.getElementById('modalCliente').addEventListener('click', function(e) {
+        if (e.target === this) {
+            cerrarModalCliente();
+        }
+    });
+    
+    function guardarCliente(event) {
+        event.preventDefault();
+        
+        const nombre = document.getElementById('modal_nombre').value;
+        const dni = document.getElementById('modal_dni').value;
+        const telefono = document.getElementById('modal_telefono').value;
+        const email = document.getElementById('modal_email').value;
+        const direccion = document.getElementById('modal_direccion').value;
+        const codigo_postal = document.getElementById('modal_codigo_postal').value;
+        const poblacion = document.getElementById('modal_poblacion').value;
+        const provincia = document.getElementById('modal_provincia').value;
+        
+        if (!nombre.trim()) {
+            alert('El nombre es obligatorio');
+            return;
+        }
+        
+        // Crear FormData
+        const formData = new FormData();
+        formData.append('nombre', nombre);
+        if (dni) formData.append('dni', dni);
+        if (telefono) formData.append('telefono', telefono);
+        if (email) formData.append('email', email);
+        if (direccion) formData.append('direccion', direccion);
+        if (codigo_postal) formData.append('codigo_postal', codigo_postal);
+        if (poblacion) formData.append('poblacion', poblacion);
+        if (provincia) formData.append('provincia', provincia);
+        
+        // Enviar petición AJAX
+        fetch('{{ url_for("nuevo_cliente_ajax") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Añadir el nuevo cliente al select
+                const select = document.getElementById('cliente_id');
+                const option = document.createElement('option');
+                option.value = data.cliente_id;
+                option.textContent = nombre + (dni ? ' (' + dni + ')' : '');
+                option.selected = true;
+                select.appendChild(option);
+                
+                // Actualizar el campo de búsqueda
+                if (window.initSearchableSelects) {
+                    window.initSearchableSelects();
+                }
+                
+                // Establecer el valor en el campo de búsqueda
+                const wrapper = select.previousElementSibling;
+                if (wrapper && wrapper.classList.contains('searchable-select-wrapper')) {
+                    const input = wrapper.querySelector('.searchable-select-input');
+                    if (input) {
+                        input.value = option.textContent;
+                    }
+                }
+                
+                cerrarModalCliente();
+            } else {
+                alert('Error al crear cliente: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al crear cliente');
+        });
+    }
+</script>
+{% endblock %}

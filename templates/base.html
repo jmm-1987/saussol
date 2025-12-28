@@ -4,6 +4,74 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Taller{% endblock %}</title>
+    {% block extra_css %}{% endblock %}
+    <style>
+        /* Estilos para campos de búsqueda con autocompletado */
+        .searchable-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        
+        .searchable-select-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .searchable-select-input:focus {
+            outline: none;
+            border-color: #16a34a;
+            box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+        }
+        
+        .searchable-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .searchable-select-dropdown.show {
+            display: block;
+        }
+        
+        .searchable-select-option {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .searchable-select-option:hover {
+            background: #f5f5f5;
+        }
+        
+        .searchable-select-option.selected {
+            background: #e8f5e9;
+            color: #16a34a;
+            font-weight: 600;
+        }
+        
+        .searchable-select-option:last-child {
+            border-bottom: none;
+        }
+        
+        .searchable-select-hidden {
+            display: none;
+        }
+    </style>
     <style>
         * {
             margin: 0;
@@ -62,28 +130,15 @@
         .logo {
             display: flex;
             align-items: center;
-            gap: 12px;
             text-decoration: none;
             color: white;
         }
         
-        .logo-icon {
-            width: 40px;
+        .logo img {
             height: 40px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-        
-        header h1 {
-            margin: 0;
-            font-size: 1.8em;
-            font-weight: 700;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            letter-spacing: 1px;
+            width: auto;
+            max-width: 300px;
+            object-fit: contain;
         }
         
         nav {
@@ -98,10 +153,19 @@
             gap: 8px;
             margin: 0;
             padding: 0;
+            flex-wrap: wrap;
         }
         
         nav li {
             margin: 0;
+        }
+        
+        .nav-divider {
+            width: 1px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.3);
+            margin: 0 10px;
+            flex-shrink: 0;
         }
         
         nav a {
@@ -162,6 +226,13 @@
             
             nav li {
                 width: 100%;
+            }
+            
+            .nav-divider {
+                width: 100%;
+                height: 1px;
+                background: rgba(255, 255, 255, 0.3);
+                margin: 10px 0;
             }
             
             nav a {
@@ -491,6 +562,10 @@
             color: #16a34a;
         }
         
+        .card-intervenciones .card-icon {
+            color: #16a34a;
+        }
+        
         .card-facturas .card-icon {
             color: #16a34a;
         }
@@ -515,6 +590,11 @@
             border: 2px solid rgba(22, 163, 74, 0.3);
         }
         
+        .card-intervenciones {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+            border: 2px solid rgba(22, 163, 74, 0.3);
+        }
+        
         .card-facturas {
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
             border: 2px solid rgba(22, 163, 74, 0.3);
@@ -522,6 +602,7 @@
         
         .card-clientes h3,
         .card-vehiculos h3,
+        .card-intervenciones h3,
         .card-facturas h3 {
             background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
             -webkit-background-clip: text;
@@ -531,35 +612,37 @@
         
         .cards-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 30px;
             margin-top: 30px;
         }
         
         @media (max-width: 768px) {
             .cards-grid {
+                grid-template-columns: 1fr;
                 gap: 15px;
                 margin-top: 15px;
             }
         }
     </style>
-    {% block extra_css %}{% endblock %}
 </head>
 <body>
     <header>
         <div class="container">
             <div class="header-content">
                 <a href="{{ url_for('index') }}" class="logo">
-                    <div class="logo-icon">🔧</div>
-                    <h1>Taller</h1>
+                    <img src="{{ url_for('static', filename='logo_saussol.png') }}" alt="Logo Saussol" style="height: 50px; width: auto;">
                 </a>
                 <button class="menu-toggle" onclick="toggleMenu()" aria-label="Menú">☰</button>
                 <nav id="main-nav">
                     <ul>
                         <li><a href="{{ url_for('index') }}">Inicio</a></li>
-                        <li><a href="{{ url_for('listar_clientes') }}">Clientes</a></li>
-                        <li><a href="{{ url_for('listar_coches') }}">Coches</a></li>
+                        <li class="nav-divider"></li>
+                        <li><a href="{{ url_for('listar_intervenciones') }}">Intervenciones</a></li>
                         <li><a href="{{ url_for('listar_facturas') }}">Facturas</a></li>
+                        <li class="nav-divider"></li>
+                        <li><a href="{{ url_for('listar_clientes') }}">Clientes</a></li>
+                        <li><a href="{{ url_for('listar_coches') }}">Vehículos</a></li>
                     </ul>
                 </nav>
             </div>
@@ -596,6 +679,287 @@
                 }
             });
         });
+        
+        // Convertir todos los selects en campos de búsqueda con autocompletado
+        function initSearchableSelects() {
+            document.querySelectorAll('select:not(.no-searchable)').forEach(select => {
+                // Crear wrapper
+                const wrapper = document.createElement('div');
+                wrapper.className = 'searchable-select-wrapper';
+                
+                // Crear input de búsqueda
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'searchable-select-input';
+                input.placeholder = select.options[0] ? select.options[0].text : 'Buscar...';
+                input.autocomplete = 'off';
+                
+                // Crear dropdown
+                const dropdown = document.createElement('div');
+                dropdown.className = 'searchable-select-dropdown';
+                
+                // Obtener opciones del select original
+                const options = Array.from(select.options);
+                let selectedValue = select.value;
+                let selectedText = '';
+                
+                // Encontrar el texto de la opción seleccionada
+                if (selectedValue) {
+                    const selectedOption = options.find(opt => opt.value === selectedValue);
+                    if (selectedOption) {
+                        selectedText = selectedOption.text;
+                        input.value = selectedText;
+                    }
+                }
+                
+                // Crear opciones en el dropdown
+                function renderOptions(filter = '') {
+                    dropdown.innerHTML = '';
+                    const filterLower = filter.toLowerCase();
+                    
+                    options.forEach(option => {
+                        if (option.value === '' || option.text.toLowerCase().includes(filterLower)) {
+                            const optionDiv = document.createElement('div');
+                            optionDiv.className = 'searchable-select-option';
+                            if (option.value === selectedValue) {
+                                optionDiv.classList.add('selected');
+                            }
+                            optionDiv.textContent = option.text;
+                            optionDiv.dataset.value = option.value;
+                            
+                            optionDiv.addEventListener('click', () => {
+                                selectedValue = option.value;
+                                selectedText = option.text;
+                                input.value = option.value ? option.text : '';
+                                select.value = option.value;
+                                
+                                // Actualizar visualmente
+                                dropdown.querySelectorAll('.searchable-select-option').forEach(opt => {
+                                    opt.classList.remove('selected');
+                                });
+                                optionDiv.classList.add('selected');
+                                
+                                dropdown.classList.remove('show');
+                                
+                                // Disparar evento change en el select original
+                                select.dispatchEvent(new Event('change', { bubbles: true }));
+                            });
+                            
+                            dropdown.appendChild(optionDiv);
+                        }
+                    });
+                    
+                    if (dropdown.children.length === 0) {
+                        const noResults = document.createElement('div');
+                        noResults.className = 'searchable-select-option';
+                        noResults.textContent = 'No se encontraron resultados';
+                        noResults.style.color = '#999';
+                        noResults.style.cursor = 'default';
+                        dropdown.appendChild(noResults);
+                    }
+                }
+                
+                // Eventos del input
+                input.addEventListener('focus', () => {
+                    renderOptions(input.value);
+                    dropdown.classList.add('show');
+                });
+                
+                input.addEventListener('input', (e) => {
+                    renderOptions(e.target.value);
+                    dropdown.classList.add('show');
+                });
+                
+                input.addEventListener('blur', (e) => {
+                    // Delay para permitir el click en las opciones
+                    setTimeout(() => {
+                        dropdown.classList.remove('show');
+                        // Si no hay valor seleccionado, restaurar el texto original
+                        if (!selectedValue && selectedText) {
+                            input.value = '';
+                        } else if (selectedValue) {
+                            input.value = selectedText;
+                        }
+                    }, 200);
+                });
+                
+                // Renderizar opciones iniciales
+                renderOptions();
+                
+                // Insertar elementos
+                wrapper.appendChild(input);
+                wrapper.appendChild(dropdown);
+                
+                // Ocultar select original pero mantenerlo para el formulario
+                select.className = 'searchable-select-hidden';
+                select.style.display = 'none';
+                
+                // Insertar wrapper antes del select
+                select.parentNode.insertBefore(wrapper, select);
+                
+                // Mantener sincronizado el valor
+                select.addEventListener('change', () => {
+                    selectedValue = select.value;
+                    const selectedOption = options.find(opt => opt.value === selectedValue);
+                    if (selectedOption) {
+                        selectedText = selectedOption.text;
+                        input.value = selectedValue ? selectedText : '';
+                    }
+                });
+            });
+        }
+        
+        // Inicializar cuando el DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initSearchableSelects);
+        } else {
+            initSearchableSelects();
+        }
+        
+        // Reinicializar después de cargar contenido dinámico
+        window.initSearchableSelects = function() {
+            // Solo inicializar selects que aún no han sido convertidos
+            document.querySelectorAll('select:not(.searchable-select-hidden):not(.no-searchable)').forEach(select => {
+                // Verificar si ya tiene un wrapper
+                const hasWrapper = select.previousElementSibling && 
+                                   select.previousElementSibling.classList.contains('searchable-select-wrapper');
+                
+                if (!hasWrapper) {
+                    // Crear wrapper
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'searchable-select-wrapper';
+                    
+                    // Crear input de búsqueda
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'searchable-select-input';
+                    const firstOption = select.options[0];
+                    input.placeholder = firstOption ? firstOption.text : 'Buscar...';
+                    input.autocomplete = 'off';
+                    
+                    // Crear dropdown
+                    const dropdown = document.createElement('div');
+                    dropdown.className = 'searchable-select-dropdown';
+                    
+                    // Obtener opciones del select original
+                    const options = Array.from(select.options);
+                    let selectedValue = select.value;
+                    let selectedText = '';
+                    
+                    // Encontrar el texto de la opción seleccionada
+                    if (selectedValue) {
+                        const selectedOption = options.find(opt => opt.value === selectedValue);
+                        if (selectedOption) {
+                            selectedText = selectedOption.text;
+                            input.value = selectedText;
+                        }
+                    }
+                    
+                    // Crear opciones en el dropdown
+                    function renderOptions(filter = '') {
+                        dropdown.innerHTML = '';
+                        const filterLower = filter.toLowerCase();
+                        
+                        options.forEach(option => {
+                            if (option.value === '' || option.text.toLowerCase().includes(filterLower)) {
+                                const optionDiv = document.createElement('div');
+                                optionDiv.className = 'searchable-select-option';
+                                if (option.value === selectedValue) {
+                                    optionDiv.classList.add('selected');
+                                }
+                                optionDiv.textContent = option.text;
+                                optionDiv.dataset.value = option.value;
+                                
+                                optionDiv.addEventListener('click', () => {
+                                    selectedValue = option.value;
+                                    selectedText = option.text;
+                                    input.value = option.value ? option.text : '';
+                                    select.value = option.value;
+                                    
+                                    // Actualizar visualmente
+                                    dropdown.querySelectorAll('.searchable-select-option').forEach(opt => {
+                                        opt.classList.remove('selected');
+                                    });
+                                    optionDiv.classList.add('selected');
+                                    
+                                    dropdown.classList.remove('show');
+                                    
+                                    // Disparar evento change en el select original
+                                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                                });
+                                
+                                dropdown.appendChild(optionDiv);
+                            }
+                        });
+                        
+                        if (dropdown.children.length === 0) {
+                            const noResults = document.createElement('div');
+                            noResults.className = 'searchable-select-option';
+                            noResults.textContent = 'No se encontraron resultados';
+                            noResults.style.color = '#999';
+                            noResults.style.cursor = 'default';
+                            dropdown.appendChild(noResults);
+                        }
+                    }
+                    
+                    // Eventos del input
+                    input.addEventListener('focus', () => {
+                        renderOptions(input.value);
+                        dropdown.classList.add('show');
+                    });
+                    
+                    input.addEventListener('input', (e) => {
+                        renderOptions(e.target.value);
+                        dropdown.classList.add('show');
+                    });
+                    
+                    input.addEventListener('blur', (e) => {
+                        setTimeout(() => {
+                            dropdown.classList.remove('show');
+                            if (!selectedValue && selectedText) {
+                                input.value = '';
+                            } else if (selectedValue) {
+                                input.value = selectedText;
+                            }
+                        }, 200);
+                    });
+                    
+                    // Renderizar opciones iniciales
+                    renderOptions();
+                    
+                    // Insertar elementos
+                    wrapper.appendChild(input);
+                    wrapper.appendChild(dropdown);
+                    
+                    // Ocultar select original pero mantenerlo para el formulario
+                    select.className = 'searchable-select-hidden';
+                    select.style.display = 'none';
+                    
+                    // Insertar wrapper antes del select
+                    select.parentNode.insertBefore(wrapper, select);
+                    
+                    // Mantener sincronizado el valor
+                    select.addEventListener('change', () => {
+                        selectedValue = select.value;
+                        const selectedOption = options.find(opt => opt.value === selectedValue);
+                        if (selectedOption) {
+                            selectedText = selectedOption.text;
+                            input.value = selectedValue ? selectedText : '';
+                        }
+                    });
+                    
+                    // Observar cambios en las opciones del select
+                    const observer = new MutationObserver(() => {
+                        const newOptions = Array.from(select.options);
+                        options.length = 0;
+                        options.push(...newOptions);
+                        renderOptions(input.value);
+                    });
+                    
+                    observer.observe(select, { childList: true });
+                }
+            });
+        };
     </script>
 </body>
 </html>

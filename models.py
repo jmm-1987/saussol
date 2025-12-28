@@ -29,20 +29,24 @@ class Coche(db.Model):
     matricula = db.Column(db.String(20), unique=True, nullable=False)
     marca = db.Column(db.String(50))
     modelo = db.Column(db.String(50))
+    tipo = db.Column(db.String(50))
     año = db.Column(db.Integer)
     color = db.Column(db.String(30))
+    cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=True)
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
     
+    cliente = db.relationship('Cliente', backref='vehiculos', lazy=True)
     intervenciones = db.relationship('Intervencion', backref='coche', lazy=True, cascade='all, delete-orphan')
     
     def __repr__(self):
-        return f'<Coche {self.matricula}>'
+        return f'<Vehiculo {self.matricula}>'
 
 class Intervencion(db.Model):
     __tablename__ = 'intervenciones'
     
     id = db.Column(db.Integer, primary_key=True)
     coche_id = db.Column(db.Integer, db.ForeignKey('coches.id'), nullable=False)
+    cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=True)
     fecha = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     km = db.Column(db.Integer, nullable=True)
     descripcion = db.Column(db.Text, nullable=False)
@@ -50,6 +54,8 @@ class Intervencion(db.Model):
     horas_trabajo = db.Column(db.Float, default=0.0)
     
     factura_id = db.Column(db.Integer, db.ForeignKey('facturas.id'), nullable=True)
+    
+    cliente = db.relationship('Cliente', backref='intervenciones', lazy=True)
     
     def __repr__(self):
         return f'<Intervencion {self.id} - {self.descripcion[:30]}>'

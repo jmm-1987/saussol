@@ -1,12 +1,85 @@
 {% extends "base.html" %}
 
-{% block title %}Nueva Factura - Taller de Automoción{% endblock %}
+{% block title %}Nueva Factura - Taller{% endblock %}
+
+{% block extra_css %}
+<style>
+    #modalIntervencion {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        overflow-y: auto;
+        align-items: flex-start;
+        padding: 20px;
+    }
+    
+    #modalIntervencion .modal-content {
+        max-width: 800px;
+        width: 100%;
+        margin: 50px auto;
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        position: relative;
+    }
+    
+    #intervenciones-list table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    #intervenciones-list table th {
+        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        color: white;
+        padding: 12px;
+        text-align: left;
+        font-size: 14px;
+    }
+    
+    #intervenciones-list table td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    #intervenciones-list table tr:hover {
+        background: #f9f9f9;
+    }
+    
+    .empty-state {
+        text-align: center;
+        color: #666;
+        padding: 40px 20px;
+    }
+    
+    @media (max-width: 768px) {
+        #modalIntervencion .modal-content {
+            margin: 20px auto;
+            padding: 20px;
+        }
+        
+        #intervenciones-list table {
+            font-size: 12px;
+        }
+        
+        #intervenciones-list table th,
+        #intervenciones-list table td {
+            padding: 8px;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="card">
     <h2>Nueva Factura</h2>
     
-    <form method="POST">
+    <form method="POST" id="facturaForm">
         <div class="form-group">
             <label for="cliente_id">Cliente *</label>
             <select id="cliente_id" name="cliente_id" required>
@@ -18,9 +91,19 @@
         </div>
         
         <div class="form-group">
-            <label>Intervenciones a Facturar *</label>
-            {% if intervenciones %}
-            <div style="max-height: 350px; overflow-y: auto; border: 1px solid #ddd; padding: 8px; border-radius: 4px;">
+            <label>Intervenciones *</label>
+            <div id="intervenciones-list" style="min-height: 100px; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9;">
+                <div class="empty-state" style="padding: 20px;">
+                    <p>No hay intervenciones añadidas. Haz clic en "Añadir Intervención" para comenzar.</p>
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="abrirModal()" style="margin-top: 15px;">+ Añadir Intervención</button>
+        </div>
+        
+        {% if intervenciones %}
+        <div class="form-group" style="margin-top: 30px;">
+            <label>Intervenciones Existentes (Opcional)</label>
+            <div style="max-height: 250px; overflow-y: auto; border: 1px solid #ddd; padding: 8px; border-radius: 4px;">
                 {% for intervencion in intervenciones %}
                 <div style="padding: 8px; border-bottom: 1px solid #eee;">
                     <label style="display: flex; align-items: center; cursor: pointer;">
@@ -34,18 +117,320 @@
                 </div>
                 {% endfor %}
             </div>
-            {% else %}
-            <div class="empty-state">
-                <p>No hay intervenciones disponibles para facturar.</p>
-            </div>
-            {% endif %}
         </div>
+        {% endif %}
         
         <div class="actions">
-            <button type="submit" class="btn btn-success" {% if not intervenciones %}disabled{% endif %}>Crear Factura</button>
+            <button type="submit" class="btn btn-success" id="btnCrearFactura" disabled>Crear Factura</button>
             <a href="{{ url_for('listar_facturas') }}" class="btn btn-secondary">Cancelar</a>
         </div>
     </form>
 </div>
+
+<!-- Modal de Nueva Intervención -->
+<div id="modalIntervencion">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h2 style="margin: 0;">Nueva Intervención</h2>
+            <button type="button" onclick="cerrarModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">&times;</button>
+        </div>
+        
+        <form id="formIntervencionModal" onsubmit="guardarIntervencion(event)">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modal_vehiculo_id">Vehículo *</label>
+                    <select id="modal_vehiculo_id" required>
+                        <option value="">Seleccione un vehículo</option>
+                        {% for vehiculo in vehiculos %}
+                        <option value="{{ vehiculo.id }}">{{ vehiculo.matricula }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="modal_fecha">Fecha *</label>
+                    <input type="date" id="modal_fecha" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="modal_km">Kilómetros</label>
+                    <input type="number" id="modal_km" min="0" placeholder="Ej: 50000">
+                </div>
+                <div class="form-group">
+                    <label for="modal_cliente_id">Cliente (Opcional)</label>
+                    <select id="modal_cliente_id">
+                        <option value="">Sin asignar</option>
+                        {% for cliente in clientes %}
+                        <option value="{{ cliente.id }}">{{ cliente.nombre }} {% if cliente.dni %}({{ cliente.dni }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Líneas de Intervención *</label>
+                <div id="modal-lineas-container">
+                    <div class="linea-intervencion" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 15px; padding: 15px; background: #f9f9f9; border-radius: 8px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 12px;">Descripción *</label>
+                            <input type="text" class="modal-descripcion" required placeholder="Descripción de la intervención...">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 12px;">Precio (€) *</label>
+                            <input type="number" class="modal-precio" step="0.01" min="0" value="0" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 12px;">Horas</label>
+                            <input type="number" class="modal-horas" step="0.1" min="0" value="0">
+                        </div>
+                        <div style="margin-bottom: 0;">
+                            <button type="button" class="btn btn-danger btn-small" onclick="eliminarLineaModal(this)" style="padding: 8px 12px; font-size: 12px;">✕</button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="añadirLineaModal()" style="margin-top: 10px;">+ Añadir Línea</button>
+            </div>
+            
+            <div class="actions">
+                <button type="submit" class="btn btn-success">Añadir Intervención</button>
+                <button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
+{% block extra_js %}
+<script>
+    let intervencionesData = [];
+    
+    // Establecer fecha de hoy por defecto
+    document.getElementById('modal_fecha').valueAsDate = new Date();
+    
+    function abrirModal() {
+        document.getElementById('modalIntervencion').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        // Establecer fecha de hoy por defecto
+        document.getElementById('modal_fecha').valueAsDate = new Date();
+        // Reinicializar campos de búsqueda en el modal
+        setTimeout(() => {
+            if (window.initSearchableSelects) {
+                window.initSearchableSelects();
+            }
+        }, 100);
+    }
+    
+    function cerrarModal() {
+        document.getElementById('modalIntervencion').style.display = 'none';
+        document.body.style.overflow = 'auto';
+        document.getElementById('formIntervencionModal').reset();
+        document.getElementById('modal_fecha').valueAsDate = new Date();
+        // Limpiar líneas adicionales, dejar solo una
+        const container = document.getElementById('modal-lineas-container');
+        while (container.children.length > 1) {
+            container.removeChild(container.lastChild);
+        }
+    }
+    
+    // Cerrar modal al hacer clic fuera de él
+    document.getElementById('modalIntervencion').addEventListener('click', function(e) {
+        if (e.target === this) {
+            cerrarModal();
+        }
+    });
+    
+    function añadirLineaModal() {
+        const container = document.getElementById('modal-lineas-container');
+        const nuevaLinea = document.createElement('div');
+        nuevaLinea.className = 'linea-intervencion';
+        nuevaLinea.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 15px; padding: 15px; background: #f9f9f9; border-radius: 8px;';
+        nuevaLinea.innerHTML = `
+            <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 12px;">Descripción *</label>
+                <input type="text" class="modal-descripcion" required placeholder="Descripción de la intervención...">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 12px;">Precio (€) *</label>
+                <input type="number" class="modal-precio" step="0.01" min="0" value="0" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 12px;">Horas</label>
+                <input type="number" class="modal-horas" step="0.1" min="0" value="0">
+            </div>
+            <div style="margin-bottom: 0;">
+                <button type="button" class="btn btn-danger btn-small" onclick="eliminarLineaModal(this)" style="padding: 8px 12px; font-size: 12px;">✕</button>
+            </div>
+        `;
+        container.appendChild(nuevaLinea);
+    }
+    
+    function eliminarLineaModal(btn) {
+        const container = document.getElementById('modal-lineas-container');
+        if (container.children.length > 1) {
+            btn.closest('.linea-intervencion').remove();
+        } else {
+            alert('Debe haber al menos una línea de intervención');
+        }
+    }
+    
+    function guardarIntervencion(event) {
+        event.preventDefault();
+        
+        const vehiculoId = document.getElementById('modal_vehiculo_id').value;
+        const vehiculoSelect = document.getElementById('modal_vehiculo_id');
+        const vehiculoTexto = vehiculoSelect.options[vehiculoSelect.selectedIndex].text;
+        const fecha = document.getElementById('modal_fecha').value;
+        const km = document.getElementById('modal_km').value;
+        const clienteId = document.getElementById('modal_cliente_id').value;
+        const clienteSelect = document.getElementById('modal_cliente_id');
+        const clienteTexto = clienteSelect.options[clienteSelect.selectedIndex].text;
+        
+        const lineas = [];
+        const lineasContainer = document.getElementById('modal-lineas-container');
+        let totalPrecio = 0;
+        
+        lineasContainer.querySelectorAll('.linea-intervencion').forEach(linea => {
+            const descripcion = linea.querySelector('.modal-descripcion').value;
+            const precioInput = linea.querySelector('.modal-precio');
+            const horasInput = linea.querySelector('.modal-horas');
+            
+            // Obtener el valor del precio y asegurar que sea un número
+            const precioValue = precioInput.value.trim();
+            const precio = precioValue ? parseFloat(precioValue.replace(',', '.')) : 0;
+            
+            // Obtener el valor de las horas y asegurar que sea un número
+            const horasValue = horasInput.value.trim();
+            const horas = horasValue ? parseFloat(horasValue.replace(',', '.')) : 0;
+            
+            if (descripcion.trim()) {
+                // Asegurar que precio y horas sean números válidos
+                const precioFinal = isNaN(precio) ? 0 : precio;
+                const horasFinal = isNaN(horas) ? 0 : horas;
+                
+                lineas.push({ 
+                    descripcion: descripcion.trim(), 
+                    precio: precioFinal, 
+                    horas: horasFinal 
+                });
+                totalPrecio += precioFinal;
+            }
+        });
+        
+        if (!vehiculoId || lineas.length === 0) {
+            alert('Debe completar el vehículo y al menos una línea de intervención');
+            return;
+        }
+        
+        // Guardar intervención en el array
+        const intervencion = {
+            vehiculo_id: vehiculoId,
+            vehiculo_texto: vehiculoTexto,
+            fecha: fecha,
+            km: km || null,
+            cliente_id: clienteId || null,
+            cliente_texto: clienteTexto !== 'Sin asignar' ? clienteTexto : null,
+            lineas: lineas,
+            total: totalPrecio
+        };
+        
+        intervencionesData.push(intervencion);
+        actualizarListaIntervenciones();
+        cerrarModal();
+    }
+    
+    function eliminarIntervencion(index) {
+        intervencionesData.splice(index, 1);
+        actualizarListaIntervenciones();
+    }
+    
+    function actualizarListaIntervenciones() {
+        const container = document.getElementById('intervenciones-list');
+        const btnCrear = document.getElementById('btnCrearFactura');
+        
+        if (intervencionesData.length === 0) {
+            container.innerHTML = '<div class="empty-state" style="padding: 20px;"><p>No hay intervenciones añadidas. Haz clic en "Añadir Intervención" para comenzar.</p></div>';
+            btnCrear.disabled = true;
+        } else {
+            let html = '<table style="width: 100%;"><thead><tr><th>Vehículo</th><th>Fecha</th><th>Km</th><th>Cliente</th><th>Descripción</th><th>Total</th><th>Acción</th></tr></thead><tbody>';
+            
+            intervencionesData.forEach((interv, index) => {
+                const descripciones = interv.lineas.map(l => l.descripcion).join(', ');
+                html += `
+                    <tr>
+                        <td><strong>${interv.vehiculo_texto}</strong></td>
+                        <td>${new Date(interv.fecha).toLocaleDateString('es-ES')}</td>
+                        <td>${interv.km || '-'}</td>
+                        <td>${interv.cliente_texto || '-'}</td>
+                        <td><small>${descripciones.length > 50 ? descripciones.substring(0, 50) + '...' : descripciones}</small></td>
+                        <td><strong style="color: #16a34a;">${interv.total.toFixed(2)} €</strong></td>
+                        <td><button type="button" class="btn btn-danger btn-small" onclick="eliminarIntervencion(${index})" style="padding: 5px 10px; font-size: 12px;">Eliminar</button></td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+            btnCrear.disabled = false;
+        }
+    }
+    
+    // Al enviar el formulario, añadir las intervenciones como campos ocultos
+    document.getElementById('facturaForm').addEventListener('submit', function(e) {
+        // Añadir campos ocultos para cada línea de cada intervención
+        let lineaGlobalIndex = 0;
+        intervencionesData.forEach((interv, intervIndex) => {
+            interv.lineas.forEach((linea, lineaIndex) => {
+                // Usar un índice global para cada línea
+                const baseName = `nueva_intervencion_${lineaGlobalIndex}`;
+                
+                const vehiculoInput = document.createElement('input');
+                vehiculoInput.type = 'hidden';
+                vehiculoInput.name = `${baseName}_vehiculo_id`;
+                vehiculoInput.value = interv.vehiculo_id;
+                this.appendChild(vehiculoInput);
+                
+                const fechaInput = document.createElement('input');
+                fechaInput.type = 'hidden';
+                fechaInput.name = `${baseName}_fecha`;
+                fechaInput.value = interv.fecha;
+                this.appendChild(fechaInput);
+                
+                const kmInput = document.createElement('input');
+                kmInput.type = 'hidden';
+                kmInput.name = `${baseName}_km`;
+                kmInput.value = interv.km || '';
+                this.appendChild(kmInput);
+                
+                const clienteInput = document.createElement('input');
+                clienteInput.type = 'hidden';
+                clienteInput.name = `${baseName}_cliente_id`;
+                clienteInput.value = interv.cliente_id || '';
+                this.appendChild(clienteInput);
+                
+                const descInput = document.createElement('input');
+                descInput.type = 'hidden';
+                descInput.name = `${baseName}_descripcion`;
+                descInput.value = linea.descripcion;
+                this.appendChild(descInput);
+                
+                const precioInput = document.createElement('input');
+                precioInput.type = 'hidden';
+                precioInput.name = `${baseName}_precio`;
+                // Asegurar que el precio se envíe como string con formato decimal correcto
+                precioInput.value = typeof linea.precio === 'number' ? linea.precio.toString() : parseFloat(linea.precio || 0).toString();
+                this.appendChild(precioInput);
+                
+                const horasInput = document.createElement('input');
+                horasInput.type = 'hidden';
+                horasInput.name = `${baseName}_horas_trabajo`;
+                // Asegurar que las horas se envíen como string con formato decimal correcto
+                horasInput.value = typeof linea.horas === 'number' ? linea.horas.toString() : parseFloat(linea.horas || 0).toString();
+                this.appendChild(horasInput);
+                
+                lineaGlobalIndex++;
+            });
+        });
+    });
+</script>
+{% endblock %}
