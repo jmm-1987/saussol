@@ -49,9 +49,27 @@
             {% endfor %}
         </tbody>
         <tfoot>
-            <tr style="background-color: #34495e; color: white; font-weight: bold;">
-                <td colspan="3" style="text-align: right;">TOTAL:</td>
-                <td>{{ "%.2f"|format(factura.total) }} €</td>
+            <tr>
+                <td colspan="3" style="text-align: right; padding-top: 15px; border-top: 2px solid #ddd;"><strong>Base Imponible:</strong></td>
+                <td style="padding-top: 15px; border-top: 2px solid #ddd;"><strong>{{ "%.2f"|format(factura.base_imponible) }} €</strong></td>
+            </tr>
+            {% if factura.descuento_porcentaje > 0 %}
+            <tr>
+                <td colspan="3" style="text-align: right; color: #dc2626;"><strong>Descuento ({{ "%.2f"|format(factura.descuento_porcentaje) }}%):</strong></td>
+                <td style="color: #dc2626;"><strong>-{{ "%.2f"|format(factura.descuento_importe) }} €</strong></td>
+            </tr>
+            <tr>
+                <td colspan="3" style="text-align: right; padding-bottom: 10px; border-bottom: 1px solid #eee;"><strong>Base después de descuento:</strong></td>
+                <td style="padding-bottom: 10px; border-bottom: 1px solid #eee;"><strong>{{ "%.2f"|format(factura.base_imponible - factura.descuento_importe) }} €</strong></td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td colspan="3" style="text-align: right;"><strong>IVA ({{ "%.2f"|format(factura.iva_porcentaje) }}%):</strong></td>
+                <td><strong>{{ "%.2f"|format(factura.iva_importe) }} €</strong></td>
+            </tr>
+            <tr style="background-color: #16a34a; color: white; font-weight: bold; font-size: 1.1em;">
+                <td colspan="3" style="text-align: right; padding: 15px;">TOTAL:</td>
+                <td style="padding: 15px;">{{ "%.2f"|format(factura.total) }} €</td>
             </tr>
         </tfoot>
     </table>

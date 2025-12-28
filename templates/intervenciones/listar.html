@@ -39,8 +39,9 @@
                     {% endif %}
                 </td>
                 <td>
-                    <a href="{{ url_for('editar_intervencion', id=intervencion.id) }}" class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">Editar</a>
                     {% if not intervencion.factura_id %}
+                    <a href="{{ url_for('nueva_factura', intervencion_id=intervencion.id) }}" class="btn btn-success" style="padding: 5px 10px; font-size: 12px;">Facturar</a>
+                    <a href="{{ url_for('editar_intervencion', id=intervencion.id) }}" class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">Editar</a>
                     <form method="POST" action="{{ url_for('eliminar_intervencion', id=intervencion.id) }}" style="display: inline;" onsubmit="return confirm('¿Está seguro de eliminar esta intervención?');">
                         <button type="submit" class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">Eliminar</button>
                     </form>

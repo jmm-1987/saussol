@@ -34,6 +34,7 @@
                 <td><strong style="color: #16a34a;">{{ "%.2f"|format(intervencion.precio) }} €</strong></td>
                 <td>{{ "%.1f"|format(intervencion.horas_trabajo) }}</td>
                 <td>
+                    <a href="{{ url_for('nueva_factura', intervencion_id=intervencion.id) }}" class="btn btn-success" style="padding: 5px 10px; font-size: 12px;">Facturar</a>
                     <a href="{{ url_for('editar_intervencion', id=intervencion.id) }}" class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">Editar</a>
                     <a href="{{ url_for('ficha_coche', id=intervencion.coche_id) }}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;">Ficha Vehículo</a>
                 </td>

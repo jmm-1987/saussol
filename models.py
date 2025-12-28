@@ -67,6 +67,11 @@ class Factura(db.Model):
     cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=False)
     fecha = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     numero_factura = db.Column(db.String(50), unique=True, nullable=False)
+    base_imponible = db.Column(db.Float, nullable=False, default=0.0)
+    descuento_porcentaje = db.Column(db.Float, nullable=False, default=0.0)
+    descuento_importe = db.Column(db.Float, nullable=False, default=0.0)
+    iva_porcentaje = db.Column(db.Float, nullable=False, default=21.0)  # IVA por defecto 21%
+    iva_importe = db.Column(db.Float, nullable=False, default=0.0)
     total = db.Column(db.Float, nullable=False, default=0.0)
     enviada_verifactu = db.Column(db.Boolean, default=False)
     fecha_envio_verifactu = db.Column(db.DateTime, nullable=True)
