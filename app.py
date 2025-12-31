@@ -1,7 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, current_app
 from models import db, Cliente, Coche, Intervencion, Factura
 from datetime import datetime
 import os
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import cm
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_RIGHT, TA_LEFT, TA_CENTER
+from io import BytesIO
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tu-clave-secreta-aqui-cambiar-en-produccion'
@@ -712,6 +719,28 @@ def enviar_verifactu(id):
     
     return redirect(url_for('ver_factura', id=id))
 
+@app.route('/facturas/<int:id>/pdf')
+def descargar_pdf_factura(id):
+    """Ruta para descargar el PDF de una factura"""
+    from sqlalchemy.orm import joinedload
+    factura = Factura.query.options(
+        joinedload(Factura.cliente),
+        joinedload(Factura.intervenciones).joinedload(Intervencion.coche)
+    ).get_or_404(id)
+    
+    try:
+        pdf_buffer = generar_pdf_factura(factura)
+        filename = f"factura_{factura.numero_factura.replace('/', '_')}.pdf"
+        return send_file(
+            pdf_buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        flash(f'Error al generar PDF: {str(e)}', 'error')
+        return redirect(url_for('ver_factura', id=id))
+
 # ========== FUNCIÓN API VERIFACTU ==========
 
 def enviar_factura_verifactu(factura):
@@ -775,6 +804,205 @@ def enviar_factura_verifactu(factura):
         'exito': False,
         'mensaje': 'Función de envío a Verifactu no implementada. Revisar documentación de la API de Verifactu para completar la integración.'
     }
+
+# ========== GENERACIÓN DE PDF ==========
+
+def generar_pdf_factura(factura):
+    """
+    Genera un PDF de la factura con el logo y formato profesional.
+    
+    Args:
+        factura: Objeto Factura de la base de datos
+    
+    Returns:
+        BytesIO: Buffer con el contenido del PDF
+    """
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, 
+                            rightMargin=2*cm, leftMargin=2*cm,
+                            topMargin=2*cm, bottomMargin=2*cm)
+    
+    # Contenedor para los elementos del PDF
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Estilos personalizados
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#991b1b'),
+        spaceAfter=30,
+        alignment=TA_CENTER
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#1a1a1a'),
+        spaceAfter=12
+    )
+    
+    normal_style = styles['Normal']
+    normal_style.fontSize = 10
+    
+    # Logo
+    logo_path = os.path.join(current_app.static_folder, 'logo_saussol.png')
+    if os.path.exists(logo_path):
+        try:
+            logo = Image(logo_path, width=8*cm, height=3*cm)
+            logo.hAlign = 'LEFT'
+            elements.append(logo)
+            elements.append(Spacer(1, 0.5*cm))
+        except Exception as e:
+            print(f"Error al cargar logo: {e}")
+    
+    # Título
+    title = Paragraph("FACTURA", title_style)
+    elements.append(title)
+    elements.append(Spacer(1, 0.5*cm))
+    
+    # Información de la factura
+    factura_data = [
+        ['Número de Factura:', factura.numero_factura],
+        ['Fecha:', factura.fecha.strftime('%d/%m/%Y')]
+    ]
+    
+    factura_table = Table(factura_data, colWidths=[4*cm, 8*cm])
+    factura_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+        ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(factura_table)
+    elements.append(Spacer(1, 0.8*cm))
+    
+    # Información del cliente
+    cliente_heading = Paragraph("DATOS DEL CLIENTE", heading_style)
+    elements.append(cliente_heading)
+    
+    cliente_info = []
+    cliente_info.append(['Nombre:', factura.cliente.nombre])
+    if factura.cliente.dni:
+        cliente_info.append(['DNI/NIF:', factura.cliente.dni])
+    if factura.cliente.direccion:
+        cliente_info.append(['Dirección:', factura.cliente.direccion])
+    if factura.cliente.codigo_postal and factura.cliente.poblacion:
+        poblacion_linea = f"{factura.cliente.codigo_postal} {factura.cliente.poblacion}"
+        if factura.cliente.provincia:
+            poblacion_linea += f" ({factura.cliente.provincia})"
+        cliente_info.append(['Población:', poblacion_linea])
+    if factura.cliente.telefono:
+        cliente_info.append(['Teléfono:', factura.cliente.telefono])
+    if factura.cliente.email:
+        cliente_info.append(['Email:', factura.cliente.email])
+    
+    cliente_table = Table(cliente_info, colWidths=[3*cm, 9*cm])
+    cliente_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+        ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f5f5f5')),
+    ]))
+    elements.append(cliente_table)
+    elements.append(Spacer(1, 0.8*cm))
+    
+    # Tabla de intervenciones
+    intervenciones_heading = Paragraph("CONCEPTO", heading_style)
+    elements.append(intervenciones_heading)
+    
+    # Datos de la tabla
+    table_data = [['Vehículo', 'Fecha', 'Descripción', 'Importe']]
+    
+    for intervencion in factura.intervenciones:
+        descripcion = intervencion.descripcion[:50] + '...' if len(intervencion.descripcion) > 50 else intervencion.descripcion
+        table_data.append([
+            intervencion.coche.matricula,
+            intervencion.fecha.strftime('%d/%m/%Y'),
+            descripcion,
+            f"{intervencion.precio:.2f} €"
+        ])
+    
+    # Crear tabla
+    tabla_intervenciones = Table(table_data, colWidths=[2.5*cm, 2.5*cm, 5*cm, 2*cm])
+    tabla_intervenciones.setStyle(TableStyle([
+        # Encabezado
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#991b1b')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('TOPPADDING', (0, 0), (-1, 0), 12),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        # Cuerpo
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('ALIGN', (0, 1), (0, -1), 'CENTER'),  # Vehículo centrado
+        ('ALIGN', (1, 1), (1, -1), 'CENTER'),  # Fecha centrada
+        ('ALIGN', (2, 1), (2, -1), 'LEFT'),    # Descripción izquierda
+        ('ALIGN', (3, 1), (3, -1), 'RIGHT'),   # Importe derecha
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
+        ('TOPPADDING', (0, 1), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+    ]))
+    elements.append(tabla_intervenciones)
+    elements.append(Spacer(1, 0.5*cm))
+    
+    # Totales
+    totales_data = []
+    
+    # Base imponible
+    totales_data.append(['Base Imponible:', f"{factura.base_imponible:.2f} €"])
+    
+    # Descuento si existe
+    if factura.descuento_porcentaje > 0:
+        totales_data.append(['Descuento ({:.2f}%):'.format(factura.descuento_porcentaje), 
+                            f"-{factura.descuento_importe:.2f} €"])
+        totales_data.append(['Base después de descuento:', 
+                            f"{factura.base_imponible - factura.descuento_importe:.2f} €"])
+    
+    # IVA
+    totales_data.append(['IVA ({:.2f}%):'.format(factura.iva_porcentaje), 
+                        f"{factura.iva_importe:.2f} €"])
+    
+    # Total
+    totales_data.append(['TOTAL:', f"{factura.total:.2f} €"])
+    
+    tabla_totales = Table(totales_data, colWidths=[8*cm, 4*cm])
+    tabla_totales.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -2), 'Helvetica'),
+        ('FONTNAME', (0, -1), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -2), 10),
+        ('FONTSIZE', (0, -1), (-1, -1), 14),
+        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -2), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -2), 6),
+        ('TOPPADDING', (0, -1), (-1, -1), 12),
+        ('BOTTOMPADDING', (0, -1), (-1, -1), 12),
+        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#16a34a')),
+        ('TEXTCOLOR', (0, -1), (-1, -1), colors.whitesmoke),
+        ('LINEABOVE', (0, 0), (-1, 0), 2, colors.grey),
+    ]))
+    elements.append(tabla_totales)
+    
+    # Construir PDF
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer
 
 # ========== DATOS DE PRUEBA ==========
 

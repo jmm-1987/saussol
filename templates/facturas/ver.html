@@ -76,6 +76,7 @@
     {% endif %}
     
     <div class="actions" style="margin-top: 20px;">
+        <a href="{{ url_for('descargar_pdf_factura', id=factura.id) }}" class="btn btn-primary">Descargar PDF</a>
         {% if not factura.enviada_verifactu %}
         <form method="POST" action="{{ url_for('enviar_verifactu', id=factura.id) }}" style="display: inline;" onsubmit="return confirm('¿Enviar esta factura a Verifactu?');">
             <button type="submit" class="btn btn-success">Enviar a Verifactu</button>
